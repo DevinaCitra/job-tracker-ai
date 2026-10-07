@@ -61,3 +61,33 @@ export async function sendChatMessage(message: string) {
 
   return response.json();
 }
+
+export async function createApplication(application: {
+  company: string;
+  position: string;
+  source: string | null;
+  date_applied: string | null;
+}) {
+  const response = await fetch(
+    "http://127.0.0.1:8000/applications",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        company: application.company,
+        position: application.position,
+        source: application.source,
+        date_applied: application.date_applied,
+        status: "Applied",
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Gagal menyimpan lamaran");
+  }
+
+  return response.json();
+}

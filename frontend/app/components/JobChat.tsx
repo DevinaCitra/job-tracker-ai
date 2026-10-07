@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { sendChatMessage } from "../lib/api";
+import {
+  sendChatMessage,
+  createApplication,
+} from "../lib/api";
 
-
+import { useRouter } from "next/navigation";
 
 type Message = {
   role: "user" | "ai";
@@ -11,15 +14,18 @@ type Message = {
 };
 
 export default function JobChat() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
 
-  const [jobPreview, setJobPreview] = useState<{
-  company: string | null;
-  position: string | null;
-  source: string | null;
-  date_applied: string | null;
+    const [isOpen, setIsOpen] = useState(false);
+    const [input, setInput] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    const [jobPreview, setJobPreview] = useState<{
+    company: string | null;
+    position: string | null;
+    source: string | null;
+    date_applied: string | null;
     } | null>(null);
 
   const [messages, setMessages] = useState<Message[]>([
@@ -34,8 +40,8 @@ export default function JobChat() {
   ]);
 
     async function handleSubmit(
-  event: React.FormEvent<HTMLFormElement>
-) {
+        event: React.FormEvent<HTMLFormElement>
+    ) {
   event.preventDefault();
 
   const text = input.trim();
@@ -90,6 +96,55 @@ export default function JobChat() {
     ]);
   } finally {
     setIsLoading(false);
+  }
+}
+
+    async function handleSave() {
+  if (!jobPreview || isSaving) return;
+
+  if (!jobPreview.company || !jobPreview.position) {
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      {
+        role: "ai",
+        text: "❌ Informasi perusahaan atau posisi belum lengkap.",
+      },
+    ]);
+
+    return;
+  }
+
+  setIsSaving(true);
+
+  try {
+    await createApplication({
+      company: jobPreview.company,
+      position: jobPreview.position,
+      source: jobPreview.source,
+      date_applied: jobPreview.date_applied,
+    });
+
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      {
+        role: "ai",
+        text: "✅ Lamaran berhasil disimpan!",
+      },
+    ]);
+
+    setJobPreview(null);
+
+    router.refresh();
+  } catch (error) {
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      {
+        role: "ai",
+        text: "❌ Gagal menyimpan lamaran. Silakan coba lagi.",
+      },
+    ]);
+  } finally {
+    setIsSaving(false);
   }
 }
 
@@ -221,9 +276,11 @@ export default function JobChat() {
 
                     <button
                     type="button"
-                    className="mt-4 w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="mt-4 w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                    💾 Simpan Lamaran
+                    {isSaving ? "Menyimpan..." : "💾 Simpan Lamaran"}
                     </button>
                 </div>
                 )}
