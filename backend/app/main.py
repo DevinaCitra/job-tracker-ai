@@ -58,7 +58,7 @@ def get_applications(
     limit: int = Query(default=10, ge=1, le=100),
     db: Session = Depends(get_db)
 ):
-    query = db.query(JobApplication)
+    query = db.query(JobApplication).order_by(JobApplication.id.desc())
 
     total = query.count()
 
@@ -101,6 +101,42 @@ def search_applications(
         )
 
     return query.all()
+
+@app.get("/applications/stats")
+def get_application_stats(
+    db: Session = Depends(get_db)
+):
+    applications = db.query(JobApplication).all()
+
+    total = len(applications)
+
+    applied = sum(
+        1 for application in applications
+        if application.status == "Applied"
+    )
+
+    interview = sum(
+        1 for application in applications
+        if application.status == "Interview"
+    )
+
+    offer = sum(
+        1 for application in applications
+        if application.status == "Offer"
+    )
+
+    rejected = sum(
+        1 for application in applications
+        if application.status == "Rejected"
+    )
+
+    return {
+        "total": total,
+        "applied": applied,
+        "interview": interview,
+        "offer": offer,
+        "rejected": rejected
+    }
 
 
 @app.get("/applications/{application_id}", response_model=JobApplicationResponse)
@@ -170,3 +206,4 @@ def delete_application(
     return {
         "message": "Application deleted successfully"
     }
+

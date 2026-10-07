@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+
+  --color-night: #05060f;
+  --color-panel: #0a0d19;
+  --color-neon: #22d3ee;
+  --color-grape: #a78bfa;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-night);
+  color: #e4e4e7;
+  font-family: var(--font-sans);
+  /* polos — tidak ada grid lagi */
+}
+
+/* Film grain halus di atas semua konten */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.neon-text {
+  text-shadow: 0 0 22px rgba(34, 211, 238, 0.45);
+}
+
+.glow-card {
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.12),
+    0 0 28px rgba(34, 211, 238, 0.08);
+}
+
+::selection {
+  background: rgba(34, 211, 238, 0.3);
+  color: #ffffff;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.25) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.2);
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Aurora drift pelan */
+@keyframes aurora-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(50px, 24px, 0) scale(1.12);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+.animate-aurora {
+  animation: aurora-drift 14s ease-in-out infinite;
+}
+.animate-aurora-slow {
+  animation: aurora-drift 20s ease-in-out infinite reverse;
+}
