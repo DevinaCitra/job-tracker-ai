@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -8,12 +9,25 @@ from app.schemas import (
     JobApplicationCreate,
     JobApplicationResponse,
     JobApplicationUpdate,
-    JobApplicationListResponse
+    JobApplicationListResponse,
+    ChatRequest
 )
-
+from app.gemini import extract_job_application
 
 app = FastAPI()
 
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 Base.metadata.create_all(bind=engine)
 
@@ -137,6 +151,12 @@ def get_application_stats(
         "offer": offer,
         "rejected": rejected
     }
+
+@app.post("/chat")
+def chat(request: ChatRequest):
+    result = extract_job_application(request.message)
+
+    return result
 
 
 @app.get("/applications/{application_id}", response_model=JobApplicationResponse)

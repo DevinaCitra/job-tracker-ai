@@ -37,3 +37,14 @@ class JobApplicationListResponse(BaseModel):
     limit: int
     total: int
     total_pages: int
+
+class JobApplicationListResponse(BaseModel):
+    data: list[JobApplicationResponse]
+    page: int
+    limit: int
+    total: int
+    total_pages: int
+
+
+class ChatRequest(BaseModel):
+    message: str

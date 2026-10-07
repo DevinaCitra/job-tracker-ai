@@ -7,6 +7,7 @@ import {
 import StatCard from "../components/StatCard";
 import ApplicationTable from "../components/ApplicationTable";
 import TelegramDemo from "../components/TelegramDemo";
+import JobChat from "../components/JobChat";
 
 export const instant = false;
 
@@ -110,6 +111,7 @@ export default async function DashboardPage() {
 
       {/* ===== Tabel (tidak diubah) ===== */}
       <ApplicationTable applications={applications} />
+      <JobChat />
     </div>
   );
 }
