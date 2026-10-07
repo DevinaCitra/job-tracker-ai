@@ -1,4 +1,4 @@
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export type Application = {
   id: number;
@@ -45,7 +45,7 @@ export async function getApplicationStats(): Promise<ApplicationStats> {
 }
 
 export async function sendChatMessage(message: string) {
-  const response = await fetch("http://127.0.0.1:8000/chat", {
+  const response = await fetch(`${API_URL}/chat`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -69,7 +69,7 @@ export async function createApplication(application: {
   date_applied: string | null;
 }) {
   const response = await fetch(
-    "http://127.0.0.1:8000/applications",
+    `${API_URL}/applications`,
     {
       method: "POST",
       headers: {
