@@ -52,13 +52,6 @@ export default function Navbar() {
 
         {/* Kanan: CTA + hamburger mobile */}
         <div className="flex items-center gap-2">
-          <Link
-            href="/applications"
-            className="hidden rounded-full bg-gradient-to-r from-cyan-400 to-violet-500 px-4 py-2 text-sm font-semibold text-night transition hover:brightness-110 sm:block"
-          >
-            + Tambah
-          </Link>
-
           <button
             onClick={() => setOpen((v) => !v)}
             aria-label="Buka menu"
