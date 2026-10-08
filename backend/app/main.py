@@ -1,20 +1,81 @@
+import jwt
+
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from jwt.exceptions import InvalidTokenError
+
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.database import Base, engine, get_db
-from app.models import JobApplication
+from app.models import JobApplication, User
 from app.schemas import (
     JobApplicationCreate,
     JobApplicationResponse,
     JobApplicationUpdate,
     JobApplicationListResponse,
-    ChatRequest
+    ChatRequest,
+    UserCreate
 )
 from app.gemini import extract_job_application
 
+from app.security import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    SECRET_KEY,
+    ALGORITHM
+)
+
 app = FastAPI()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+):
+    credentials_exception = HTTPException(
+        status_code=401,
+        detail="Token tidak valid atau sudah expired",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
+
+        user_id = payload.get("sub")
+
+        if user_id is None:
+            raise credentials_exception
+
+    except InvalidTokenError:
+        raise credentials_exception
+
+    user = db.query(User).filter(
+        User.id == int(user_id)
+    ).first()
+
+    if user is None:
+        raise credentials_exception
+
+    return user
+
+
+@app.get("/users/me")
+def get_me(
+    current_user: User = Depends(get_current_user)
+):
+    return {
+        "id": current_user.id,
+        "name": current_user.name,
+        "email": current_user.email
+    }
 
 origins = [
     "http://localhost:3000",
@@ -47,9 +108,11 @@ def root():
 @app.post("/applications")
 def create_application(
     application: JobApplicationCreate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     new_application = JobApplication(
+        user_id=current_user.id,
         company=application.company,
         position=application.position,
         location=application.location,
@@ -71,9 +134,12 @@ def create_application(
 def get_applications(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=10, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    query = db.query(JobApplication).order_by(JobApplication.id.desc())
+    query = db.query(JobApplication).filter(
+        JobApplication.user_id == current_user.id
+    )
 
     total = query.count()
 
@@ -96,9 +162,12 @@ def search_applications(
     company: str | None = None,
     status: str | None = None,
     source: str | None = None,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    query = db.query(JobApplication)
+    query = db.query(JobApplication).filter(
+        JobApplication.user_id == current_user.id
+    )
 
     if company:
         query = query.filter(
@@ -119,9 +188,12 @@ def search_applications(
 
 @app.get("/applications/stats")
 def get_application_stats(
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    applications = db.query(JobApplication).all()
+    applications = db.query(JobApplication).filter(
+        JobApplication.user_id == current_user.id
+    ).all()
 
     total = len(applications)
 
@@ -159,14 +231,82 @@ def chat(request: ChatRequest):
 
     return result
 
+@app.post("/register")
+def register_user(
+    user: UserCreate,
+    db: Session = Depends(get_db)
+):
+    existing_user = db.query(User).filter(
+        User.email == user.email
+    ).first()
+
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Email sudah terdaftar"
+        )
+
+    new_user = User(
+        name=user.name,
+        email=user.email,
+        hashed_password=hash_password(user.password)
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return {
+        "message": "Registrasi berhasil",
+        "user": {
+            "id": new_user.id,
+            "name": new_user.name,
+            "email": new_user.email
+        }
+    }
+
+@app.post("/login")
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(
+        User.email == form_data.username
+    ).first()
+
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Email atau password salah"
+        )
+
+    if not verify_password(
+        form_data.password,
+        user.hashed_password
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Email atau password salah"
+        )
+
+    access_token = create_access_token(
+        data={"sub": str(user.id)}
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
 @app.get("/applications/{application_id}", response_model=JobApplicationResponse)
 def get_application(
     application_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     application = db.query(JobApplication).filter(
-        JobApplication.id == application_id
+        JobApplication.id == application_id,
+        JobApplication.user_id == current_user.id
     ).first()
 
     if application is None:
@@ -183,10 +323,12 @@ def get_application(
 def update_application(
     application_id: int,
     application: JobApplicationUpdate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     existing_application = db.query(JobApplication).filter(
-        JobApplication.id == application_id
+        JobApplication.id == application_id,
+        JobApplication.user_id == current_user.id
     ).first()
 
     if existing_application is None:
@@ -209,10 +351,12 @@ def update_application(
 @app.delete("/applications/{application_id}")
 def delete_application(
     application_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     application = db.query(JobApplication).filter(
-        JobApplication.id == application_id
+        JobApplication.id == application_id,
+        JobApplication.user_id == current_user.id
     ).first()
 
     if application is None:
