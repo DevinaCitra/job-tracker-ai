@@ -256,9 +256,6 @@ def register_user(
     db.commit()
     db.refresh(new_user)
 
-    print("REGISTER EMAIL:", new_user.email)
-    print("HASH PREFIX:", new_user.hashed_password[:20])
-
     return {
         "message": "Registrasi berhasil",
         "user": {
@@ -273,13 +270,9 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    print("LOGIN EMAIL:", repr(form_data.username))
-
     user = db.query(User).filter(
         User.email == form_data.username
     ).first()
-
-    print("USER FOUND:", user is not None)
 
     if user is None:
         raise HTTPException(
@@ -291,8 +284,6 @@ def login(
         form_data.password,
         user.hashed_password
     )
-
-    print("PASSWORD VALID:", password_valid)
 
     if not password_valid:
         raise HTTPException(

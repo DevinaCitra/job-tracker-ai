@@ -24,6 +24,32 @@ export async function loginUser(
   return data;
 }
 
+export async function registerUser(
+  name: string,
+  email: string,
+  password: string
+) {
+  const response = await fetch("/api/auth/register", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name,
+      email,
+      password,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Register gagal");
+  }
+
+  return data;
+}
+
 export type Application = {
   id: number;
   company: string;

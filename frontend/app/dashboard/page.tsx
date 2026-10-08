@@ -6,11 +6,11 @@ import {
 import {
   getAuthenticatedApplications,
   getAuthenticatedApplicationStats,
+  getAuthenticatedUser,
 } from "../lib/server-api";
 
 import StatCard from "../components/StatCard";
 import ApplicationTable from "../components/ApplicationTable";
-import TelegramDemo from "../components/TelegramDemo";
 import JobChat from "../components/JobChat";
 
 export const instant = false;
@@ -19,6 +19,7 @@ export default async function DashboardPage() {
   const result = await getAuthenticatedApplications();
   const stats = (await getAuthenticatedApplicationStats()) as ApplicationStats;
   const applications = result.data as Application[];
+  const user = await getAuthenticatedUser();
 
   const now = new Date();
   const hour = now.getHours();
@@ -43,39 +44,25 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      {/* ===== Hero asimetris ===== */}
-      <section className="animate-fade-up grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
-        {/* Kiri: teks */}
-        <div>
-          {/* Badge baru: status bar sentence-case, bukan pill mono */}
-          <div className="flex items-center gap-2.5 text-sm font-medium text-zinc-400">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-              <span className="relative h-2 w-2 rounded-full bg-emerald-400" />
-            </span>
-            Bot Telegram aktif · AI siap mencatat
-          </div>
+      {/* ===== Sapaan personal ===== */}
+      <section className="animate-fade-up">
+        <p className="text-sm font-medium text-zinc-500">{dateLabel}</p>
 
-          <h1 className="font-display mt-5 text-5xl font-bold leading-[1.08] tracking-tight sm:text-6xl">
-            <span className="text-white">Alur lamaran,</span>
-            <br />
-            <span className="neon-text bg-gradient-to-r from-sky-400 via-cyan-300 to-violet-400 bg-clip-text text-transparent">
-              terpantau otomatis.
-            </span>
-          </h1>
+        <h1 className="font-display mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+          {greeting},{" "}
+          <span className="neon-text bg-gradient-to-r from-sky-400 via-cyan-300 to-violet-400 bg-clip-text text-transparent">
+            {user.name}
+          </span>{" "}
+          👋
+        </h1>
 
-          <p className="mt-6 max-w-lg text-[15px] leading-7 text-zinc-400">
-            {greeting}! · {dateLabel} — semua lamaran yang kamu kirim lewat
-            Telegram terkumpul, terstruktur, dan terpantau di satu tempat.
-          </p>
-        </div>
-
-        {/* Kanan: demo typing Telegram */}
-        <TelegramDemo />
+        <p className="mt-4 max-w-xl text-[15px] leading-7 text-zinc-400">
+          Ini ringkasan perjalanan cari kerja kamu sejauh ini.
+        </p>
       </section>
 
-      {/* ===== Statistik (tidak diubah) ===== */}
-      <div className="mt-16 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {/* ===== Statistik ===== */}
+      <div className="mt-12 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           delay={160}
           icon="total"
@@ -113,7 +100,7 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* ===== Tabel (tidak diubah) ===== */}
+      {/* ===== Tabel ===== */}
       <ApplicationTable applications={applications} />
       <JobChat />
     </div>
