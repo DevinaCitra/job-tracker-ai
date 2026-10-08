@@ -273,29 +273,38 @@ def login(
     print("LOGIN EMAIL:", repr(form_data.username))
 
     user = db.query(User).filter(
-    User.email == form_data.username
-).first()
+        User.email == form_data.username
+    ).first()
 
-print("USER FOUND:", user is not None)
+    print("USER FOUND:", user is not None)
 
-if user is None:
-    raise HTTPException(
-        status_code=401,
-        detail="Email atau password salah"
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Email atau password salah"
+        )
+
+    password_valid = verify_password(
+        form_data.password,
+        user.hashed_password
     )
 
-password_valid = verify_password(
-    form_data.password,
-    user.hashed_password
-)
+    print("PASSWORD VALID:", password_valid)
 
-print("PASSWORD VALID:", password_valid)
+    if not password_valid:
+        raise HTTPException(
+            status_code=401,
+            detail="Email atau password salah"
+        )
 
-if not password_valid:
-    raise HTTPException(
-        status_code=401,
-        detail="Email atau password salah"
+    access_token = create_access_token(
+        data={"sub": str(user.id)}
     )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
 @app.get("/applications/{application_id}", response_model=JobApplicationResponse)
 def get_application(
