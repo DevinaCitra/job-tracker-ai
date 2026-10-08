@@ -256,6 +256,9 @@ def register_user(
     db.commit()
     db.refresh(new_user)
 
+    print("REGISTER EMAIL:", new_user.email)
+    print("HASH PREFIX:", new_user.hashed_password[:20])
+
     return {
         "message": "Registrasi berhasil",
         "user": {
