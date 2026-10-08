@@ -270,9 +270,13 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
+    print("LOGIN EMAIL:", repr(form_data.username))
+
     user = db.query(User).filter(
         User.email == form_data.username
     ).first()
+
+    print("USER FOUND:", user is not None)
 
     if user is None:
         raise HTTPException(
@@ -280,10 +284,14 @@ def login(
             detail="Email atau password salah"
         )
 
-    if not verify_password(
+    password_valid = verify_password(
         form_data.password,
         user.hashed_password
-    ):
+    )
+
+    print("PASSWORD VALID:", password_valid)
+
+    if not password_valid:
         raise HTTPException(
             status_code=401,
             detail="Email atau password salah"
@@ -297,7 +305,6 @@ def login(
         "access_token": access_token,
         "token_type": "bearer"
     }
-
 @app.get("/applications/{application_id}", response_model=JobApplicationResponse)
 def get_application(
     application_id: int,

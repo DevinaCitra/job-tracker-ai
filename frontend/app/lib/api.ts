@@ -1,5 +1,38 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+export async function loginUser(
+  email: string,
+  password: string
+) {
+  const formData = new URLSearchParams();
+
+  formData.append("username", email);
+  formData.append("password", password);
+
+  console.log("EMAIL:", email);
+  console.log("PASSWORD LENGTH:", password.length);
+  console.log("FORM DATA:", formData.toString());
+
+  const response = await fetch(`${API_URL}/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: formData,
+  });
+
+  const data = await response.json();
+
+  console.log("RESPONSE STATUS:", response.status);
+  console.log("RESPONSE DATA:", JSON.stringify(data));
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Login gagal");
+  }
+
+  return data;
+}
+
 export type Application = {
   id: number;
   company: string;
