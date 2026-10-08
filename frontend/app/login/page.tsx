@@ -17,11 +17,9 @@ export default function LoginPage() {
     try {
       setError("");
 
-      const data = await loginUser(email, password);
-
-      localStorage.setItem("access_token", data.access_token);
-
+      await loginUser(email, password);
       router.push("/dashboard");
+      
     } catch (error) {
       setError("Email atau password salah");
     }

@@ -1,9 +1,13 @@
 import {
-  getApplications,
-  getApplicationStats,
   type Application,
   type ApplicationStats,
 } from "../lib/api";
+
+import {
+  getAuthenticatedApplications,
+  getAuthenticatedApplicationStats,
+} from "../lib/server-api";
+
 import StatCard from "../components/StatCard";
 import ApplicationTable from "../components/ApplicationTable";
 import TelegramDemo from "../components/TelegramDemo";
@@ -12,8 +16,8 @@ import JobChat from "../components/JobChat";
 export const instant = false;
 
 export default async function DashboardPage() {
-  const result = await getApplications();
-  const stats = (await getApplicationStats()) as ApplicationStats;
+  const result = await getAuthenticatedApplications();
+  const stats = (await getAuthenticatedApplicationStats()) as ApplicationStats;
   const applications = result.data as Application[];
 
   const now = new Date();

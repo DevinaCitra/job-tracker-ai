@@ -4,27 +4,18 @@ export async function loginUser(
   email: string,
   password: string
 ) {
-  const formData = new URLSearchParams();
-
-  formData.append("username", email);
-  formData.append("password", password);
-
-  console.log("EMAIL:", email);
-  console.log("PASSWORD LENGTH:", password.length);
-  console.log("FORM DATA:", formData.toString());
-
-  const response = await fetch(`${API_URL}/login`, {
+  const response = await fetch("/api/auth/login", {
     method: "POST",
     headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
+      "Content-Type": "application/json",
     },
-    body: formData,
+    body: JSON.stringify({
+      email,
+      password,
+    }),
   });
 
   const data = await response.json();
-
-  console.log("RESPONSE STATUS:", response.status);
-  console.log("RESPONSE DATA:", JSON.stringify(data));
 
   if (!response.ok) {
     throw new Error(data.detail || "Login gagal");
@@ -53,21 +44,42 @@ type ApplicationsResponse = {
   data: Application[];
 };
 
-export async function getApplications(): Promise<ApplicationsResponse> {
+export async function getApplications(
+  token?: string
+): Promise<ApplicationsResponse> {
   const response = await fetch(`${API_URL}/applications`, {
     cache: "no-store",
+    headers: token
+      ? {
+          Authorization: `Bearer ${token}`,
+        }
+      : undefined,
   });
 
   if (!response.ok) {
-    throw new Error("Gagal mengambil data lamaran");
+    const errorData = await response.text();
+
+    console.log("APPLICATION ERROR STATUS:", response.status);
+    console.log("APPLICATION ERROR DATA:", errorData);
+
+    throw new Error(
+      `Gagal mengambil data lamaran (${response.status})`
+    );
   }
 
   return response.json();
 }
 
-export async function getApplicationStats(): Promise<ApplicationStats> {
+export async function getApplicationStats(
+  token?: string
+): Promise<ApplicationStats> {
   const response = await fetch(`${API_URL}/applications/stats`, {
     cache: "no-store",
+    headers: token
+      ? {
+          Authorization: `Bearer ${token}`,
+        }
+      : undefined,
   });
 
   if (!response.ok) {
